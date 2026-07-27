@@ -61,6 +61,7 @@ coherencia de métricas.
 
 ```text
 .
+├── README.md
 ├── databricks.yml
 ├── resources/
 │   ├── pipeline.yml
@@ -71,14 +72,10 @@ coherencia de métricas.
 │   ├── 02_silver.py
 │   └── 03_gold.py
 ├── setup/00_setup.sql
-├── dashboard/
-│   ├── dashboard_gold.lvdash.json
-│   └── generate_dashboard.mjs
+├── dashboard/dashboard_gold.lvdash.json
 ├── data/{clientes,productos,pedidos,detalle_pedidos}/
-└── scripts/
-    ├── upload_data.ps1
-    ├── validate_data.ps1
-    └── validate_dashboard.ps1
+├── docs/data_dictionary.md
+└── scripts/upload_data.ps1
 ```
 
 ## Despliegue reproducible
@@ -88,8 +85,6 @@ coherencia de métricas.
 - Git.
 - Databricks CLI `0.218.0` o posterior.
 - PowerShell 5.1 o posterior.
-- Python 3.12 o posterior solo para ejecutar las pruebas locales.
-- Node.js 20 o posterior solo si se desea regenerar el dashboard.
 - Un workspace de Databricks con Unity Catalog, Lakeflow Declarative
   Pipelines, un SQL Warehouse y permisos para crear los objetos del proyecto.
 
@@ -107,13 +102,7 @@ Ambos se toman de los argumentos del usuario que realiza el despliegue.
 ### 3. Crear infraestructura y cargar datos
 
 1. Ejecutar `setup/00_setup.sql` en Databricks SQL.
-2. Validar los archivos:
-
-   ```powershell
-   .\scripts\validate_data.ps1
-   ```
-
-3. Cargar los 12 batches al Volume:
+2. Cargar los 12 batches al Volume:
 
    ```powershell
    .\scripts\upload_data.ps1 -Profile <perfil> -DatabricksExecutable databricks
@@ -150,32 +139,5 @@ El dashboard publicado contiene cuatro páginas:
   stock, rotación y cobertura.
 - **Operación y calidad:** estados de pedido, impacto de descuentos,
   reconciliación cabecera-detalle y cobertura del esquema estrella.
-
-Para regenerar la definición del dashboard:
-
-```powershell
-node .\dashboard\generate_dashboard.mjs
-```
-
-Para validar las 15 consultas contra un workspace desplegado:
-
-```powershell
-.\scripts\validate_dashboard.ps1 `
-  -Profile <perfil> `
-  -WarehouseId <id> `
-  -DatabricksExecutable databricks
-```
-
-## Verificación
-
-Las pruebas estáticas confirman la presencia de los 12 batches, el uso de
-`readStream`, Auto Loader, expectations, cuatro materialized views y cuatro
-tipos de visualización:
-
-```powershell
-python -m pip install -r requirements-dev.txt
-python -m pytest -q
-.\scripts\validate_data.ps1
-```
 
 El diccionario detallado está en [`docs/data_dictionary.md`](docs/data_dictionary.md).
