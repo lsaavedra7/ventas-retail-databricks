@@ -86,26 +86,40 @@ coherencia de métricas.
 - Databricks CLI `0.218.0` o posterior.
 - PowerShell 5.1 o posterior.
 - Un workspace de Databricks con Unity Catalog, Lakeflow Declarative
-  Pipelines, un SQL Warehouse y permisos para crear los objetos del proyecto.
+  Pipelines, un SQL Warehouse y permisos para crear un catálogo, esquemas,
+  un Volume, un pipeline, un Job y un dashboard.
 
 ### 2. Clonar y autenticar
 
 ```powershell
 git clone https://github.com/lsaavedra7/ventas-retail-databricks.git
 cd ventas-retail-databricks
-databricks auth login --host https://<workspace>.cloud.databricks.com --profile <perfil>
+databricks auth login --host <URL_COMPLETA_DEL_WORKSPACE> --profile <perfil>
 ```
 
 El bundle no contiene una URL de workspace ni un ID de warehouse particulares.
 Ambos se toman de los argumentos del usuario que realiza el despliegue.
 
+Consultar los SQL Warehouses disponibles y copiar el campo `id` del warehouse
+que se utilizará:
+
+```powershell
+databricks warehouses list --profile <perfil> --output json
+```
+
 ### 3. Crear infraestructura y cargar datos
 
-1. Ejecutar `setup/00_setup.sql` en Databricks SQL.
+1. Ejecutar `setup/00_setup.sql` en Databricks SQL. Por defecto crea el
+   catálogo `dbassociate`. Si el workspace exige otro catálogo, cambiar
+   `project_catalog` en la primera sección del script y utilizar ese mismo
+   valor en `-Catalog` y `--var "catalog=<catalogo>"`.
 2. Cargar los 12 batches al Volume:
 
    ```powershell
-   .\scripts\upload_data.ps1 -Profile <perfil> -DatabricksExecutable databricks
+   .\scripts\upload_data.ps1 `
+     -Profile <perfil> `
+     -Catalog dbassociate `
+     -DatabricksExecutable databricks
    ```
 
 ### 4. Validar, desplegar y ejecutar
@@ -113,14 +127,22 @@ Ambos se toman de los argumentos del usuario que realiza el despliegue.
 1. Validar y desplegar el bundle indicando el perfil y el warehouse:
 
    ```powershell
-   databricks bundle validate --profile <perfil> --var "warehouse_id=<id>"
-   databricks bundle deploy --profile <perfil> --var "warehouse_id=<id>"
+   databricks bundle validate --profile <perfil> `
+     --var "warehouse_id=<id>" `
+     --var "catalog=dbassociate"
+
+   databricks bundle deploy --profile <perfil> `
+     --var "warehouse_id=<id>" `
+     --var "catalog=dbassociate"
    ```
 
 2. Ejecutar el Job:
 
    ```powershell
-   databricks bundle run ventas_retail_orchestracion --profile <perfil> --var "warehouse_id=<id>"
+   databricks bundle run ventas_retail_orchestracion `
+     --profile <perfil> `
+     --var "warehouse_id=<id>" `
+     --var "catalog=dbassociate"
    ```
 
 El dashboard se despliega desde
