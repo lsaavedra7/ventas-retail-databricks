@@ -1,0 +1,48 @@
+bundle:
+  name: ventas_retail_luissaavedra
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Catálogo de Unity Catalog del proyecto.
+    default: dbassociate
+  landing_schema:
+    description: Esquema que contiene el Volume de archivos fuente.
+    default: landing
+  bronze_schema:
+    description: Esquema Bronze.
+    default: bronze
+  silver_schema:
+    description: Esquema Silver.
+    default: silver
+  gold_schema:
+    description: Esquema Gold.
+    default: gold
+  volume_name:
+    description: Nombre del Volume administrado.
+    default: raw_data
+  project_name:
+    description: Carpeta única del proyecto dentro del Volume.
+    default: ventas_retail_luissaavedra
+  warehouse_id:
+    description: ID del SQL Warehouse usado por el dashboard (obligatorio al desplegar).
+
+sync:
+  include:
+    - data/**
+    - dashboard/**
+    - setup/**
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

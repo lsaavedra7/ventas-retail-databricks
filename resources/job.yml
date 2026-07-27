@@ -1,0 +1,21 @@
+resources:
+  jobs:
+    ventas_retail_orchestracion:
+      name: ventas_retail_orquestacion
+      description: Orquesta la actualización incremental del pipeline Bronze-Silver-Gold.
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+      tasks:
+        - task_key: actualizar_pipeline_ventas
+          description: Ejecuta Lakeflow Spark Declarative Pipelines sin full refresh.
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.ventas_retail_pipeline.id}
+            full_refresh: false
+        - task_key: actualizar_dashboard_gold
+          description: Refresca los datasets publicados del dashboard Gold.
+          depends_on:
+            - task_key: actualizar_pipeline_ventas
+          dashboard_task:
+            dashboard_id: ${resources.dashboards.dashboard_gold.id}
+            warehouse_id: ${var.warehouse_id}

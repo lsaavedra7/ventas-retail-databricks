@@ -1,0 +1,2296 @@
+{
+  "datasets": [
+    {
+      "name": "kpis_ejecutivos",
+      "displayName": "Indicadores ejecutivos",
+      "queryLines": [
+        "SELECT\n",
+        "  ROUND(SUM(monto_total), 2) AS ventas_totales,\n",
+        "  COUNT(DISTINCT order_id) AS pedidos,\n",
+        "  SUM(cantidad) AS unidades,\n",
+        "  ROUND(SUM(monto_total) / COUNT(DISTINCT order_id), 2) AS ticket_promedio,\n",
+        "  COUNT(DISTINCT customer_key) AS clientes_con_compra,\n",
+        "  COUNT(DISTINCT product_key) AS productos_vendidos\n",
+        "FROM fact_ventas"
+      ]
+    },
+    {
+      "name": "ventas_fecha",
+      "displayName": "Evolución diaria de ventas",
+      "queryLines": [
+        "SELECT\n",
+        "  d.fecha,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos,\n",
+        "  SUM(f.cantidad) AS unidades\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_fecha d ON f.date_key = d.date_key\n",
+        "GROUP BY d.fecha\n",
+        "ORDER BY d.fecha"
+      ]
+    },
+    {
+      "name": "ventas_categoria",
+      "displayName": "Ventas por categoría",
+      "queryLines": [
+        "SELECT\n",
+        "  p.categoria,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  SUM(f.cantidad) AS unidades,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_producto p ON f.product_key = p.product_key\n",
+        "GROUP BY p.categoria\n",
+        "ORDER BY ventas DESC"
+      ]
+    },
+    {
+      "name": "ventas_canal",
+      "displayName": "Ventas por canal",
+      "queryLines": [
+        "SELECT\n",
+        "  INITCAP(canal_venta) AS canal,\n",
+        "  ROUND(SUM(monto_total), 2) AS ventas,\n",
+        "  COUNT(DISTINCT order_id) AS pedidos,\n",
+        "  SUM(cantidad) AS unidades\n",
+        "FROM fact_ventas\n",
+        "GROUP BY canal_venta\n",
+        "ORDER BY ventas DESC"
+      ]
+    },
+    {
+      "name": "ventas_estado",
+      "displayName": "Ventas por estado del pedido",
+      "queryLines": [
+        "SELECT\n",
+        "  INITCAP(REPLACE(estado_pedido, '_', ' ')) AS estado,\n",
+        "  COUNT(DISTINCT order_id) AS pedidos,\n",
+        "  ROUND(SUM(monto_total), 2) AS ventas,\n",
+        "  SUM(cantidad) AS unidades\n",
+        "FROM fact_ventas\n",
+        "GROUP BY estado_pedido\n",
+        "ORDER BY pedidos DESC"
+      ]
+    },
+    {
+      "name": "ventas_segmento",
+      "displayName": "Ventas por segmento",
+      "queryLines": [
+        "SELECT\n",
+        "  c.segmento,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos,\n",
+        "  COUNT(DISTINCT f.customer_key) AS clientes,\n",
+        "  ROUND(SUM(f.monto_total) / COUNT(DISTINCT f.order_id), 2) AS ticket_promedio\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_cliente c ON f.customer_key = c.customer_key\n",
+        "GROUP BY c.segmento\n",
+        "ORDER BY ventas DESC"
+      ]
+    },
+    {
+      "name": "ventas_pais",
+      "displayName": "Ventas por país",
+      "queryLines": [
+        "SELECT\n",
+        "  c.pais,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos,\n",
+        "  COUNT(DISTINCT f.customer_key) AS clientes\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_cliente c ON f.customer_key = c.customer_key\n",
+        "GROUP BY c.pais\n",
+        "ORDER BY ventas DESC"
+      ]
+    },
+    {
+      "name": "top_clientes",
+      "displayName": "Top 15 clientes",
+      "queryLines": [
+        "SELECT\n",
+        "  c.nombre_completo AS cliente,\n",
+        "  c.segmento,\n",
+        "  c.ciudad,\n",
+        "  c.pais,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos,\n",
+        "  SUM(f.cantidad) AS unidades,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  ROUND(SUM(f.monto_total) / COUNT(DISTINCT f.order_id), 2) AS ticket_promedio\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_cliente c ON f.customer_key = c.customer_key\n",
+        "GROUP BY c.nombre_completo, c.segmento, c.ciudad, c.pais\n",
+        "ORDER BY ventas DESC\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "ventas_ciudad",
+      "displayName": "Rendimiento por ciudad",
+      "queryLines": [
+        "SELECT\n",
+        "  c.ciudad,\n",
+        "  c.pais,\n",
+        "  COUNT(DISTINCT f.customer_key) AS clientes,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos,\n",
+        "  SUM(f.cantidad) AS unidades,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_cliente c ON f.customer_key = c.customer_key\n",
+        "GROUP BY c.ciudad, c.pais\n",
+        "ORDER BY ventas DESC\n",
+        "LIMIT 20"
+      ]
+    },
+    {
+      "name": "top_productos",
+      "displayName": "Top 15 productos",
+      "queryLines": [
+        "SELECT\n",
+        "  p.nombre_producto AS producto,\n",
+        "  p.categoria,\n",
+        "  p.subcategoria,\n",
+        "  p.proveedor,\n",
+        "  SUM(f.cantidad) AS unidades,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  ROUND(SUM(f.monto_total) / SUM(f.cantidad), 2) AS ingreso_por_unidad\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_producto p ON f.product_key = p.product_key\n",
+        "GROUP BY p.nombre_producto, p.categoria, p.subcategoria, p.proveedor\n",
+        "ORDER BY ventas DESC\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "ventas_subcategoria",
+      "displayName": "Ventas por subcategoría",
+      "queryLines": [
+        "SELECT\n",
+        "  p.subcategoria,\n",
+        "  ROUND(SUM(f.monto_total), 2) AS ventas,\n",
+        "  SUM(f.cantidad) AS unidades,\n",
+        "  COUNT(DISTINCT f.order_id) AS pedidos\n",
+        "FROM fact_ventas f\n",
+        "JOIN dim_producto p ON f.product_key = p.product_key\n",
+        "GROUP BY p.subcategoria\n",
+        "ORDER BY ventas DESC\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "inventario",
+      "displayName": "Inventario y rotación",
+      "queryLines": [
+        "WITH ventas_producto AS (\n",
+        "  SELECT\n",
+        "    product_key,\n",
+        "    SUM(cantidad) AS unidades_vendidas,\n",
+        "    ROUND(SUM(monto_total), 2) AS ventas\n",
+        "  FROM fact_ventas\n",
+        "  GROUP BY product_key\n",
+        ")\n",
+        "SELECT\n",
+        "  p.nombre_producto AS producto,\n",
+        "  p.categoria,\n",
+        "  p.subcategoria,\n",
+        "  p.proveedor,\n",
+        "  p.stock_actual,\n",
+        "  COALESCE(v.unidades_vendidas, 0) AS unidades_vendidas,\n",
+        "  COALESCE(v.ventas, 0) AS ventas,\n",
+        "  p.stock_actual - COALESCE(v.unidades_vendidas, 0) AS balance_stock,\n",
+        "  CASE\n",
+        "    WHEN COALESCE(v.unidades_vendidas, 0) = 0 THEN 'Sin ventas'\n",
+        "    WHEN p.stock_actual < v.unidades_vendidas THEN 'Stock crítico'\n",
+        "    ELSE 'Cobertura disponible'\n",
+        "  END AS estado_inventario\n",
+        "FROM dim_producto p\n",
+        "LEFT JOIN ventas_producto v ON p.product_key = v.product_key\n",
+        "ORDER BY unidades_vendidas DESC, p.stock_actual ASC"
+      ]
+    },
+    {
+      "name": "descuentos",
+      "displayName": "Impacto de descuentos",
+      "queryLines": [
+        "SELECT\n",
+        "  CASE\n",
+        "    WHEN descuento = 0 THEN 'Sin descuento'\n",
+        "    WHEN descuento <= 0.05 THEN 'Hasta 5%'\n",
+        "    WHEN descuento <= 0.10 THEN '6% a 10%'\n",
+        "    ELSE 'Más de 10%'\n",
+        "  END AS rango_descuento,\n",
+        "  COUNT(*) AS lineas,\n",
+        "  SUM(cantidad) AS unidades,\n",
+        "  ROUND(SUM(cantidad * precio_unitario), 2) AS importe_bruto,\n",
+        "  ROUND(SUM(cantidad * precio_unitario) - SUM(monto_total), 2) AS descuento_otorgado,\n",
+        "  ROUND(SUM(monto_total), 2) AS ventas_netas\n",
+        "FROM fact_ventas\n",
+        "GROUP BY\n",
+        "  CASE\n",
+        "    WHEN descuento = 0 THEN 'Sin descuento'\n",
+        "    WHEN descuento <= 0.05 THEN 'Hasta 5%'\n",
+        "    WHEN descuento <= 0.10 THEN '6% a 10%'\n",
+        "    ELSE 'Más de 10%'\n",
+        "  END\n",
+        "ORDER BY ventas_netas DESC"
+      ]
+    },
+    {
+      "name": "reconciliacion",
+      "displayName": "Reconciliación de pedidos",
+      "queryLines": [
+        "WITH totales AS (\n",
+        "  SELECT\n",
+        "    order_id,\n",
+        "    MAX(total_pedido) AS total_cabecera,\n",
+        "    ROUND(SUM(monto_total), 2) AS total_detalle\n",
+        "  FROM fact_ventas\n",
+        "  GROUP BY order_id\n",
+        ")\n",
+        "SELECT\n",
+        "  order_id,\n",
+        "  total_cabecera,\n",
+        "  total_detalle,\n",
+        "  ROUND(total_detalle - total_cabecera, 2) AS diferencia,\n",
+        "  CASE\n",
+        "    WHEN ABS(total_detalle - total_cabecera) <= 0.01 THEN 'Conciliado'\n",
+        "    ELSE 'Con diferencia'\n",
+        "  END AS resultado\n",
+        "FROM totales\n",
+        "ORDER BY ABS(total_detalle - total_cabecera) DESC, order_id"
+      ]
+    },
+    {
+      "name": "calidad_modelo",
+      "displayName": "Cobertura y calidad del modelo Gold",
+      "queryLines": [
+        "SELECT\n",
+        "  (SELECT COUNT(*) FROM fact_ventas) AS filas_fact,\n",
+        "  (\n",
+        "    SELECT COUNT(*)\n",
+        "    FROM fact_ventas\n",
+        "    WHERE customer_key IS NOT NULL\n",
+        "      AND product_key IS NOT NULL\n",
+        "      AND date_key IS NOT NULL\n",
+        "  ) AS filas_con_llaves_validas,\n",
+        "  (SELECT COUNT(*) FROM dim_cliente) AS clientes_dimension,\n",
+        "  (SELECT COUNT(*) FROM dim_producto) AS productos_dimension,\n",
+        "  (SELECT COUNT(*) FROM dim_fecha) AS fechas_dimension,\n",
+        "  (\n",
+        "    SELECT COUNT(*)\n",
+        "    FROM dim_producto p\n",
+        "    LEFT ANTI JOIN fact_ventas f ON p.product_key = f.product_key\n",
+        "  ) AS productos_sin_ventas"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "resumen_ejecutivo",
+      "displayName": "Resumen ejecutivo",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo_resumen",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Ventas Retail · Resumen ejecutivo"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_ventas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_ejecutivos",
+                  "fields": [
+                    {
+                      "name": "ventas_totales",
+                      "expression": "`ventas_totales`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Ventas totales",
+                  "fieldName": "ventas_totales"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas totales"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_pedidos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_ejecutivos",
+                  "fields": [
+                    {
+                      "name": "pedidos",
+                      "expression": "`pedidos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Pedidos con detalle",
+                  "fieldName": "pedidos"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pedidos con detalle"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_unidades",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_ejecutivos",
+                  "fields": [
+                    {
+                      "name": "unidades",
+                      "expression": "`unidades`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Unidades vendidas",
+                  "fieldName": "unidades"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Unidades vendidas"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_ticket",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_ejecutivos",
+                  "fields": [
+                    {
+                      "name": "ticket_promedio",
+                      "expression": "`ticket_promedio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Ticket promedio",
+                  "fieldName": "ticket_promedio"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket promedio"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_clientes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_ejecutivos",
+                  "fields": [
+                    {
+                      "name": "clientes_con_compra",
+                      "expression": "`clientes_con_compra`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Clientes compradores",
+                  "fieldName": "clientes_con_compra"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Clientes compradores"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_productos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_ejecutivos",
+                  "fields": [
+                    {
+                      "name": "productos_vendidos",
+                      "expression": "`productos_vendidos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Productos vendidos",
+                  "fieldName": "productos_vendidos"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Productos vendidos"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "linea_ventas_fecha",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_fecha",
+                  "fields": [
+                    {
+                      "name": "fecha",
+                      "expression": "`fecha`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Fecha"
+                  },
+                  "displayName": "Fecha",
+                  "fieldName": "fecha",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Evolución diaria de ventas"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "line"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_categoria",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_categoria",
+                  "fields": [
+                    {
+                      "name": "categoria",
+                      "expression": "`categoria`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Categoría"
+                  },
+                  "displayName": "Categoría",
+                  "fieldName": "categoria",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas por categoría"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_canal",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_canal",
+                  "fields": [
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Canal"
+                  },
+                  "displayName": "Canal",
+                  "fieldName": "canal",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas por canal"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 10,
+            "width": 3,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "clientes_geografia",
+      "displayName": "Clientes y geografía",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo_clientes",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Clientes y geografía"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_segmento",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_segmento",
+                  "fields": [
+                    {
+                      "name": "segmento",
+                      "expression": "`segmento`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Segmento"
+                  },
+                  "displayName": "Segmento",
+                  "fieldName": "segmento",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas por segmento"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_pais",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_pais",
+                  "fields": [
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "País"
+                  },
+                  "displayName": "País",
+                  "fieldName": "pais",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas por país"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 1,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_top_clientes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_clientes",
+                  "fields": [
+                    {
+                      "name": "cliente",
+                      "expression": "`cliente`"
+                    },
+                    {
+                      "name": "segmento",
+                      "expression": "`segmento`"
+                    },
+                    {
+                      "name": "ciudad",
+                      "expression": "`ciudad`"
+                    },
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    },
+                    {
+                      "name": "pedidos",
+                      "expression": "`pedidos`"
+                    },
+                    {
+                      "name": "unidades",
+                      "expression": "`unidades`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    },
+                    {
+                      "name": "ticket_promedio",
+                      "expression": "`ticket_promedio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "allowHTMLByDefault": false,
+              "condensed": true,
+              "encodings": {
+                "columns": [
+                  {
+                    "displayAs": "string",
+                    "displayName": "Cliente",
+                    "fieldName": "cliente",
+                    "order": 100000,
+                    "title": "Cliente",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Segmento",
+                    "fieldName": "segmento",
+                    "order": 100001,
+                    "title": "Segmento",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Ciudad",
+                    "fieldName": "ciudad",
+                    "order": 100002,
+                    "title": "Ciudad",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "País",
+                    "fieldName": "pais",
+                    "order": 100003,
+                    "title": "País",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Pedidos",
+                    "fieldName": "pedidos",
+                    "numberFormat": "0",
+                    "order": 100004,
+                    "title": "Pedidos",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Unidades",
+                    "fieldName": "unidades",
+                    "numberFormat": "0",
+                    "order": 100005,
+                    "title": "Unidades",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ventas",
+                    "fieldName": "ventas",
+                    "numberFormat": "$0.00",
+                    "order": 100006,
+                    "title": "Ventas",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ticket promedio",
+                    "fieldName": "ticket_promedio",
+                    "numberFormat": "$0.00",
+                    "order": 100007,
+                    "title": "Ticket promedio",
+                    "type": "float",
+                    "visible": true
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Top 15 clientes por ventas"
+              },
+              "itemsPerPage": 15,
+              "paginationSize": "default",
+              "version": 1,
+              "widgetType": "table",
+              "withRowNumber": true
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_ciudades",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_ciudad",
+                  "fields": [
+                    {
+                      "name": "ciudad",
+                      "expression": "`ciudad`"
+                    },
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    },
+                    {
+                      "name": "clientes",
+                      "expression": "`clientes`"
+                    },
+                    {
+                      "name": "pedidos",
+                      "expression": "`pedidos`"
+                    },
+                    {
+                      "name": "unidades",
+                      "expression": "`unidades`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "allowHTMLByDefault": false,
+              "condensed": true,
+              "encodings": {
+                "columns": [
+                  {
+                    "displayAs": "string",
+                    "displayName": "Ciudad",
+                    "fieldName": "ciudad",
+                    "order": 100000,
+                    "title": "Ciudad",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "País",
+                    "fieldName": "pais",
+                    "order": 100001,
+                    "title": "País",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Clientes",
+                    "fieldName": "clientes",
+                    "numberFormat": "0",
+                    "order": 100002,
+                    "title": "Clientes",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Pedidos",
+                    "fieldName": "pedidos",
+                    "numberFormat": "0",
+                    "order": 100003,
+                    "title": "Pedidos",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Unidades",
+                    "fieldName": "unidades",
+                    "numberFormat": "0",
+                    "order": 100004,
+                    "title": "Unidades",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ventas",
+                    "fieldName": "ventas",
+                    "numberFormat": "$0.00",
+                    "order": 100005,
+                    "title": "Ventas",
+                    "type": "float",
+                    "visible": true
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Rendimiento por ciudad"
+              },
+              "itemsPerPage": 15,
+              "paginationSize": "default",
+              "version": 1,
+              "widgetType": "table",
+              "withRowNumber": true
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 6,
+            "height": 7
+          }
+        }
+      ]
+    },
+    {
+      "name": "productos_inventario",
+      "displayName": "Productos e inventario",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo_productos",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Productos e inventario"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_top_productos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_productos",
+                  "fields": [
+                    {
+                      "name": "producto",
+                      "expression": "`producto`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Producto"
+                  },
+                  "displayName": "Producto",
+                  "fieldName": "producto",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Top 15 productos por ventas"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_subcategoria",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_subcategoria",
+                  "fields": [
+                    {
+                      "name": "subcategoria",
+                      "expression": "`subcategoria`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Subcategoría"
+                  },
+                  "displayName": "Subcategoría",
+                  "fieldName": "subcategoria",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas"
+                  },
+                  "displayName": "Ventas",
+                  "fieldName": "ventas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas por subcategoría"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 1,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_top_productos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_productos",
+                  "fields": [
+                    {
+                      "name": "producto",
+                      "expression": "`producto`"
+                    },
+                    {
+                      "name": "categoria",
+                      "expression": "`categoria`"
+                    },
+                    {
+                      "name": "subcategoria",
+                      "expression": "`subcategoria`"
+                    },
+                    {
+                      "name": "proveedor",
+                      "expression": "`proveedor`"
+                    },
+                    {
+                      "name": "unidades",
+                      "expression": "`unidades`"
+                    },
+                    {
+                      "name": "pedidos",
+                      "expression": "`pedidos`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    },
+                    {
+                      "name": "ingreso_por_unidad",
+                      "expression": "`ingreso_por_unidad`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "allowHTMLByDefault": false,
+              "condensed": true,
+              "encodings": {
+                "columns": [
+                  {
+                    "displayAs": "string",
+                    "displayName": "Producto",
+                    "fieldName": "producto",
+                    "order": 100000,
+                    "title": "Producto",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Categoría",
+                    "fieldName": "categoria",
+                    "order": 100001,
+                    "title": "Categoría",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Subcategoría",
+                    "fieldName": "subcategoria",
+                    "order": 100002,
+                    "title": "Subcategoría",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Proveedor",
+                    "fieldName": "proveedor",
+                    "order": 100003,
+                    "title": "Proveedor",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Unidades",
+                    "fieldName": "unidades",
+                    "numberFormat": "0",
+                    "order": 100004,
+                    "title": "Unidades",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Pedidos",
+                    "fieldName": "pedidos",
+                    "numberFormat": "0",
+                    "order": 100005,
+                    "title": "Pedidos",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ventas",
+                    "fieldName": "ventas",
+                    "numberFormat": "$0.00",
+                    "order": 100006,
+                    "title": "Ventas",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ingreso/unidad",
+                    "fieldName": "ingreso_por_unidad",
+                    "numberFormat": "$0.00",
+                    "order": 100007,
+                    "title": "Ingreso/unidad",
+                    "type": "float",
+                    "visible": true
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Detalle de productos líderes"
+              },
+              "itemsPerPage": 15,
+              "paginationSize": "default",
+              "version": 1,
+              "widgetType": "table",
+              "withRowNumber": true
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_inventario",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "inventario",
+                  "fields": [
+                    {
+                      "name": "producto",
+                      "expression": "`producto`"
+                    },
+                    {
+                      "name": "categoria",
+                      "expression": "`categoria`"
+                    },
+                    {
+                      "name": "subcategoria",
+                      "expression": "`subcategoria`"
+                    },
+                    {
+                      "name": "proveedor",
+                      "expression": "`proveedor`"
+                    },
+                    {
+                      "name": "stock_actual",
+                      "expression": "`stock_actual`"
+                    },
+                    {
+                      "name": "unidades_vendidas",
+                      "expression": "`unidades_vendidas`"
+                    },
+                    {
+                      "name": "ventas",
+                      "expression": "`ventas`"
+                    },
+                    {
+                      "name": "balance_stock",
+                      "expression": "`balance_stock`"
+                    },
+                    {
+                      "name": "estado_inventario",
+                      "expression": "`estado_inventario`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "allowHTMLByDefault": false,
+              "condensed": true,
+              "encodings": {
+                "columns": [
+                  {
+                    "displayAs": "string",
+                    "displayName": "Producto",
+                    "fieldName": "producto",
+                    "order": 100000,
+                    "title": "Producto",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Categoría",
+                    "fieldName": "categoria",
+                    "order": 100001,
+                    "title": "Categoría",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Subcategoría",
+                    "fieldName": "subcategoria",
+                    "order": 100002,
+                    "title": "Subcategoría",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Proveedor",
+                    "fieldName": "proveedor",
+                    "order": 100003,
+                    "title": "Proveedor",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Stock",
+                    "fieldName": "stock_actual",
+                    "numberFormat": "0",
+                    "order": 100004,
+                    "title": "Stock",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Unidades vendidas",
+                    "fieldName": "unidades_vendidas",
+                    "numberFormat": "0",
+                    "order": 100005,
+                    "title": "Unidades vendidas",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ventas",
+                    "fieldName": "ventas",
+                    "numberFormat": "$0.00",
+                    "order": 100006,
+                    "title": "Ventas",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Balance stock",
+                    "fieldName": "balance_stock",
+                    "numberFormat": "0",
+                    "order": 100007,
+                    "title": "Balance stock",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Estado",
+                    "fieldName": "estado_inventario",
+                    "order": 100008,
+                    "title": "Estado",
+                    "type": "string",
+                    "visible": true
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Inventario, ventas y cobertura"
+              },
+              "itemsPerPage": 20,
+              "paginationSize": "default",
+              "version": 1,
+              "widgetType": "table",
+              "withRowNumber": true
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "operacion_calidad",
+      "displayName": "Operación y calidad",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo_calidad",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Operación, descuentos y calidad Gold"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_filas_fact",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "calidad_modelo",
+                  "fields": [
+                    {
+                      "name": "filas_fact",
+                      "expression": "`filas_fact`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Filas de hechos",
+                  "fieldName": "filas_fact"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Filas de hechos"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_llaves_validas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "calidad_modelo",
+                  "fields": [
+                    {
+                      "name": "filas_con_llaves_validas",
+                      "expression": "`filas_con_llaves_validas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Filas con llaves válidas",
+                  "fieldName": "filas_con_llaves_validas"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Filas con llaves válidas"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_clientes_dim",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "calidad_modelo",
+                  "fields": [
+                    {
+                      "name": "clientes_dimension",
+                      "expression": "`clientes_dimension`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Clientes en dimensión",
+                  "fieldName": "clientes_dimension"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Clientes en dimensión"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_productos_dim",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "calidad_modelo",
+                  "fields": [
+                    {
+                      "name": "productos_dimension",
+                      "expression": "`productos_dimension`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Productos en dimensión",
+                  "fieldName": "productos_dimension"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Productos en dimensión"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_fechas_dim",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "calidad_modelo",
+                  "fields": [
+                    {
+                      "name": "fechas_dimension",
+                      "expression": "`fechas_dimension`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Fechas en dimensión",
+                  "fieldName": "fechas_dimension"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Fechas en dimensión"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_productos_sin_venta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "calidad_modelo",
+                  "fields": [
+                    {
+                      "name": "productos_sin_ventas",
+                      "expression": "`productos_sin_ventas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "value": {
+                  "displayName": "Productos sin ventas",
+                  "fieldName": "productos_sin_ventas"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Productos sin ventas"
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_estado",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ventas_estado",
+                  "fields": [
+                    {
+                      "name": "estado",
+                      "expression": "`estado`"
+                    },
+                    {
+                      "name": "pedidos",
+                      "expression": "`pedidos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Estado"
+                  },
+                  "displayName": "Estado",
+                  "fieldName": "estado",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Pedidos"
+                  },
+                  "displayName": "Pedidos",
+                  "fieldName": "pedidos",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pedidos por estado"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "barras_descuento",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "descuentos",
+                  "fields": [
+                    {
+                      "name": "rango_descuento",
+                      "expression": "`rango_descuento`"
+                    },
+                    {
+                      "name": "ventas_netas",
+                      "expression": "`ventas_netas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "x": {
+                  "axis": {
+                    "title": "Rango de descuento"
+                  },
+                  "displayName": "Rango de descuento",
+                  "fieldName": "rango_descuento",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Ventas netas"
+                  },
+                  "displayName": "Ventas netas",
+                  "fieldName": "ventas_netas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ventas netas por rango de descuento"
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621",
+                  "#077A9D",
+                  "#00A972",
+                  "#FFAB00",
+                  "#8B5CF6",
+                  "#EC4899"
+                ]
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_descuentos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "descuentos",
+                  "fields": [
+                    {
+                      "name": "rango_descuento",
+                      "expression": "`rango_descuento`"
+                    },
+                    {
+                      "name": "lineas",
+                      "expression": "`lineas`"
+                    },
+                    {
+                      "name": "unidades",
+                      "expression": "`unidades`"
+                    },
+                    {
+                      "name": "importe_bruto",
+                      "expression": "`importe_bruto`"
+                    },
+                    {
+                      "name": "descuento_otorgado",
+                      "expression": "`descuento_otorgado`"
+                    },
+                    {
+                      "name": "ventas_netas",
+                      "expression": "`ventas_netas`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "allowHTMLByDefault": false,
+              "condensed": true,
+              "encodings": {
+                "columns": [
+                  {
+                    "displayAs": "string",
+                    "displayName": "Rango",
+                    "fieldName": "rango_descuento",
+                    "order": 100000,
+                    "title": "Rango",
+                    "type": "string",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Líneas",
+                    "fieldName": "lineas",
+                    "numberFormat": "0",
+                    "order": 100001,
+                    "title": "Líneas",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Unidades",
+                    "fieldName": "unidades",
+                    "numberFormat": "0",
+                    "order": 100002,
+                    "title": "Unidades",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Importe bruto",
+                    "fieldName": "importe_bruto",
+                    "numberFormat": "$0.00",
+                    "order": 100003,
+                    "title": "Importe bruto",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Descuento",
+                    "fieldName": "descuento_otorgado",
+                    "numberFormat": "$0.00",
+                    "order": 100004,
+                    "title": "Descuento",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Ventas netas",
+                    "fieldName": "ventas_netas",
+                    "numberFormat": "$0.00",
+                    "order": 100005,
+                    "title": "Ventas netas",
+                    "type": "float",
+                    "visible": true
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Impacto económico de descuentos"
+              },
+              "itemsPerPage": 15,
+              "paginationSize": "default",
+              "version": 1,
+              "widgetType": "table",
+              "withRowNumber": true
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_reconciliacion",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "reconciliacion",
+                  "fields": [
+                    {
+                      "name": "order_id",
+                      "expression": "`order_id`"
+                    },
+                    {
+                      "name": "total_cabecera",
+                      "expression": "`total_cabecera`"
+                    },
+                    {
+                      "name": "total_detalle",
+                      "expression": "`total_detalle`"
+                    },
+                    {
+                      "name": "diferencia",
+                      "expression": "`diferencia`"
+                    },
+                    {
+                      "name": "resultado",
+                      "expression": "`resultado`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "allowHTMLByDefault": false,
+              "condensed": true,
+              "encodings": {
+                "columns": [
+                  {
+                    "displayAs": "number",
+                    "displayName": "Pedido",
+                    "fieldName": "order_id",
+                    "numberFormat": "0",
+                    "order": 100000,
+                    "title": "Pedido",
+                    "type": "integer",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Total cabecera",
+                    "fieldName": "total_cabecera",
+                    "numberFormat": "$0.00",
+                    "order": 100001,
+                    "title": "Total cabecera",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Total detalle",
+                    "fieldName": "total_detalle",
+                    "numberFormat": "$0.00",
+                    "order": 100002,
+                    "title": "Total detalle",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "number",
+                    "displayName": "Diferencia",
+                    "fieldName": "diferencia",
+                    "numberFormat": "$0.00",
+                    "order": 100003,
+                    "title": "Diferencia",
+                    "type": "float",
+                    "visible": true
+                  },
+                  {
+                    "displayAs": "string",
+                    "displayName": "Resultado",
+                    "fieldName": "resultado",
+                    "order": 100004,
+                    "title": "Resultado",
+                    "type": "string",
+                    "visible": true
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Reconciliación cabecera vs. detalle"
+              },
+              "itemsPerPage": 20,
+              "paginationSize": "default",
+              "version": 1,
+              "widgetType": "table",
+              "withRowNumber": true
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ]
+    }
+  ]
+}

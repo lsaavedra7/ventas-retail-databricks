@@ -1,0 +1,9 @@
+resources:
+  dashboards:
+    dashboard_gold:
+      display_name: Ventas Retail — Capa Gold
+      file_path: ../dashboard/dashboard_gold.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.gold_schema}
+      embed_credentials: true

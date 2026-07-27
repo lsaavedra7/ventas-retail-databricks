@@ -1,0 +1,23 @@
+resources:
+  pipelines:
+    ventas_retail_pipeline:
+      name: ventas_retail_bronze_silver_gold
+      catalog: ${var.catalog}
+      schema: ${var.bronze_schema}
+      serverless: true
+      continuous: false
+      channel: CURRENT
+      photon: true
+      root_path: ../src/transformations
+      libraries:
+        - glob:
+            include: ../src/transformations/**
+      configuration:
+        "project.catalog": ${var.catalog}
+        "project.landing_schema": ${var.landing_schema}
+        "project.bronze_schema": ${var.bronze_schema}
+        "project.silver_schema": ${var.silver_schema}
+        "project.gold_schema": ${var.gold_schema}
+        "project.volume_name": ${var.volume_name}
+        "project.name": ${var.project_name}
+        "pipelines.metrics.flowTimeReporter.enabled": "true"
